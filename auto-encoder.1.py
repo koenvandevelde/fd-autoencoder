@@ -99,7 +99,7 @@ decoder = Dense(input_dim, activation='relu')(decoder)
 #you either use a keras model or build one yourself as we do here
 autoencoder = Model(inputs=input_layer, outputs=decoder)
 
-nb_epoch = 5
+nb_epoch = 1
 batch_size = 128
 
 #Once your model looks good, configure its learning process with .compile()
@@ -141,7 +141,7 @@ autoencoder = load_model('model.h5')
 print('history')
 print(history)
 import datetime
-title = 'autoencoder-' + str(datetime.datetime.now()) + '-params_epoch:' + str(nb_epoch)
+title = 'autoencoder-' + str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')) + '-params_epoch:' + str(nb_epoch)
 fig = plt.figure(title + '__loss')
 plt.plot(history['loss'])
 plt.plot(history['val_loss'])
@@ -150,11 +150,12 @@ plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
 plt.draw()
+plt.savefig(pathPrefix + title + '__loss')
 
 print('history')
 print(history)
 
-
+pathPrefix = 'results/'
 # summarize history for accuracy
 fig = plt.figure(title + '__accuracy')
 plt.plot(history['accuracy'])
@@ -164,7 +165,7 @@ plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
 plt.draw()
-
+plt.savefig(pathPrefix + title + '__accuracy')
 
 scores = autoencoder.evaluate(X_train, X_train)
 #print('ok')
@@ -192,6 +193,7 @@ plt.title("Confusion matrix")
 plt.ylabel('True class')
 plt.xlabel('Predicted class')
 plt.draw()
+plt.savefig(pathPrefix + title + '__confusion matrix')
 
 #show all plots
-plt.show()
+#plt.show()
