@@ -67,39 +67,14 @@ print("x train shape")
 print(X_train.shape)
 print("x test shape")
 print(X_test.shape)
-encoding_dim = 512
 
-#Input() is used to instantiate a Keras tensor
-input_layer = Input(shape=(input_dim, ))
-encoder = Dense(encoding_dim, activation="tanh", 
-                activity_regularizer=regularizers.l1(10e-5))(input_layer)
-encoder = Dense(int(encoding_dim / 2), activation="relu")(encoder)                      #256
-encoder = Dense(int(encoding_dim / 2 / 2), activation="relu")(encoder)                  #128
-encoder = Dense(int(encoding_dim / 2 / 2 / 2), activation="relu")(encoder)              #64
-encoder = Dense(int(encoding_dim / 2 / 2 / 2 / 2), activation="relu")(encoder)          #32
-encoder = Dense(int(encoding_dim  / 2 / 2 / 2 / 2 / 2), activation="relu")(encoder)     #16
-print(' layer')
-print(int(encoding_dim  / 2 / 2 / 2 / 2 / 2 / 2))
-encoder = Dense(int(encoding_dim  / 2 / 2 / 2 / 2 / 2 / 2), activation="relu")(encoder) #8
-print('last layer')
-print(int(encoding_dim  / 2 / 2 / 2 / 2 / 2 / 2 / 2))
-encoder = Dense(int(encoding_dim  / 2 / 2 / 2 / 2 / 2 / 2 / 2), activation="relu")(encoder) #4
-encoder = Dense(int(3), activation="relu")(encoder) #3
 
-decoder = Dense(int(3), activation='tanh')(encoder)
-decoder = Dense(int(encoding_dim  / 2 / 2 / 2 / 2 / 2 / 2 / 2), activation='tanh')(decoder)
-decoder = Dense(int(encoding_dim  / 2 / 2 / 2 / 2 / 2 / 2), activation='tanh')(decoder)
-decoder = Dense(int(encoding_dim  / 2 / 2 / 2 / 2 / 2), activation='tanh')(decoder)
-decoder = Dense(int(encoding_dim  / 2 / 2 / 2 / 2), activation='tanh')(decoder)
-decoder = Dense(int(encoding_dim  / 2 / 2 /2), activation='tanh')(decoder)
-decoder = Dense(int(encoding_dim  / 2 / 2 ), activation='tanh')(decoder)
-decoder = Dense(int(encoding_dim  / 2 ), activation='tanh')(decoder)
-decoder = Dense(input_dim, activation='relu')(decoder)
+type='sixlayer'
+from autoencoder_models.sixlayer import run
+autoencoder = run(input_dim)
 
-#you either use a keras model or build one yourself as we do here
-autoencoder = Model(inputs=input_layer, outputs=decoder)
 
-nb_epoch = 1
+nb_epoch = 25
 batch_size = 128
 
 #Once your model looks good, configure its learning process with .compile()
@@ -135,13 +110,13 @@ history = autoencoder.fit(X_train, X_train,
 #When compile is set to False, the compilation is omitted without any warning.
 #see https://www.tensorflow.org/api_docs/python/tf/keras/models/load_model
 autoencoder = load_model('model.h5')
-
+pathPrefix = 'results/'
 
 #Model evaluation
 print('history')
 print(history)
 import datetime
-title = 'autoencoder-' + str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')) + '-params_epoch:' + str(nb_epoch)
+title = 'ae-' + type + '-' + str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')) + '-params_epoch:' + str(nb_epoch)
 fig = plt.figure(title + '__loss')
 plt.plot(history['loss'])
 plt.plot(history['val_loss'])
@@ -155,7 +130,6 @@ plt.savefig(pathPrefix + title + '__loss')
 print('history')
 print(history)
 
-pathPrefix = 'results/'
 # summarize history for accuracy
 fig = plt.figure(title + '__accuracy')
 plt.plot(history['accuracy'])
