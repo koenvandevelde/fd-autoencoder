@@ -2,10 +2,9 @@ from tensorflow.keras.layers import Input, Dense #prefix this with tensorflow
 from tensorflow.keras import regularizers
 from tensorflow.keras.models import Model, load_model
 
-def run(input_dim):
+def run(input_dim, encoding_dim):
 
     #Input() is used to instantiate a Keras tensor
-    encoding_dim = 14
 
     input_layer = Input(shape=(input_dim, ))
     encoder = Dense(encoding_dim, activation="tanh", 

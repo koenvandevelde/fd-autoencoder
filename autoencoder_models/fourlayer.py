@@ -10,10 +10,9 @@ def run(input_dim, encoding_dim):
                     activity_regularizer=regularizers.l1(10e-5))(input_layer)
     encoder = Dense(int(encoding_dim / 2), activation="relu")(encoder)                      #14.5
     encoder = Dense(int(encoding_dim / 2 / 2), activation="relu")(encoder)                  #7.25
-    encoder = Dense(int(encoding_dim / 2 / 2 / 2), activation="relu")(encoder)              #3.5
 
-    decoder = Dense(int(encoding_dim  / 2 / 2 /2), activation='tanh')(encoder)
-    decoder = Dense(int(encoding_dim  / 2 / 2 ), activation='relu')(decoder)
+
+    decoder = Dense(int(encoding_dim  / 2 / 2 ), activation='tanh')(encoder)
     decoder = Dense(int(encoding_dim  / 2 ), activation='relu')(decoder)
     decoder = Dense(input_dim, activation='relu')(decoder)
 

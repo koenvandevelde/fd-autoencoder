@@ -68,19 +68,28 @@ print(X_train.shape)
 print("x test shape")
 print(X_test.shape)
 
-
-type='sixlayer'
-from autoencoder_models.sixlayer import run
-autoencoder = run(input_dim)
-
-
-nb_epoch = 25
+nb_epoch = 50
 batch_size = 128
+encoding_dim = 14
+type='single'
+
+if type == 'default':
+    from autoencoder_models.default import run
+elif type == 'sixlayer':
+    from autoencoder_models.sixlayer import run
+elif type == 'fourlayer':
+    from autoencoder_models.fourlayer import run
+elif type == 'single':
+    from autoencoder_models.single import run
+else:
+    print('unknown algorithm')
+autoencoder = run(input_dim, encoding_dim)
+
 
 #Once your model looks good, configure its learning process with .compile()
 autoencoder.compile(optimizer='adam', 
                     loss='mean_squared_error', 
-                    metrics=['accuracy'])
+                    metrics=['accuracy', 'binary_crossentropy'])
 
 checkpointer = ModelCheckpoint(filepath="model.h5",
                                verbose=0,
@@ -116,7 +125,7 @@ pathPrefix = 'results/'
 print('history')
 print(history)
 import datetime
-title = 'ae-' + type + '-' + str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')) + '-params_epoch:' + str(nb_epoch)
+title = 'ae-' + type + '-encoding_dim:' + str(encoding_dim) + '-' + str(datetime.datetime.now().strftime('%Y-%m-%d')) + '-params_epoch:' + str(nb_epoch)
 fig = plt.figure(title + '__loss')
 plt.plot(history['loss'])
 plt.plot(history['val_loss'])
