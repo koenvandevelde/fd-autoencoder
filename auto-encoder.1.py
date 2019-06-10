@@ -12,6 +12,7 @@ from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Input, Dense #prefix this with tensorflow
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from tensorflow.keras import regularizers
+from sklearn.metrics import confusion_matrix, precision_recall_curve, roc_curve, auc
 
 #plt optional settings
 #sns.set(style='whitegrid', palette='muted', font_scale=1.5)
@@ -60,7 +61,7 @@ y_test = pd.read_pickle('y_test.pkl')
 X_train = X_train.values
 X_test = X_test.values
 
-#- Building model
+#####- Building model -#####
 input_dim = X_train.shape[1]
 print("input dimension")
 print(input_dim)
@@ -69,7 +70,7 @@ print(X_train.shape)
 print("x test shape")
 print(X_test.shape)
 
-nb_epoch = 5
+nb_epoch = 3
 batch_size = 32
 encoding_dim = 14
 type='default'
@@ -129,6 +130,7 @@ autoencoder = load_model('model.h5')
 pathPrefix = 'results/'
 
 #Model evaluation
+#####- Loss -#####
 print('history')
 print(history)
 
@@ -145,7 +147,7 @@ plt.savefig(pathPrefix + title + '__loss')
 print('history')
 print(history)
 
-# summarize history for accuracy
+#####- Accuracy -#####
 fig = plt.figure(title + '__accuracy')
 plt.plot(history['accuracy'])
 plt.plot(history['val_accuracy'])
@@ -168,58 +170,29 @@ error_df = pd.DataFrame({'reconstruction_error': mse,
                         'true_class': y_test})
 print(error_df.describe())
 
-
-
-from sklearn.metrics import confusion_matrix, precision_recall_curve, roc_curve
-threshold_fixed = 20
-pred_y = [1 if e > threshold_fixed else 0 for e in error_df.reconstruction_error.values]
-conf_matrix = confusion_matrix(error_df.true_class, pred_y)
-print(conf_matrix)
-
-
+#####- ROC -#####
 predictions = autoencoder.predict(X_test)[:, 1]
 fpr_keras, tpr_keras, thresholds_keras = roc_curve(error_df.true_class, predictions)
-
-print('fpr_keras')
-print(fpr_keras)
-print('tpr_keras')
-tpr_keras
-print('thresholds')
-print(thresholds_keras)
-
-from sklearn.metrics import auc
 auc_keras = auc(fpr_keras, tpr_keras)
 
-plt.figure(1)
-plt.plot([0, 1], [0, 1], 'k--')
-#plt.plot(fpr_keras, tpr_keras, label='Keras (area = {:.3f})'.format(auc_keras))
+plt.figure(pathPrefix + title + '__roc')
+plt.plot([0, 1], [0, 1], linestyle='--')
 plt.plot(fpr_keras, tpr_keras, lw=1, alpha=0.3,
              label='ROC fold %d (AUC = %0.2f)' % (0, auc_keras))
-
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
 plt.title('ROC curve')
 plt.legend(loc='best')
-plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='r',
-         label='Chance', alpha=.8)
-
-
 plt.xlim([-0.05, 1.05])
 plt.ylim([-0.05, 1.05])
 plt.draw()
 plt.savefig(pathPrefix + title + '__roc')
-# Zoom in view of the upper left corner.
-# plt.figure(2)
-# plt.xlim(0, 0.2)
-# plt.ylim(0.8, 1)
-# plt.plot([0, 1], [0, 1], 'k--')
-# plt.plot(fpr_keras, tpr_keras, label='Keras (area = {:.3f})'.format(auc_keras))
-# plt.xlabel('False positive rate')
-# plt.ylabel('True positive rate')
-# plt.title('ROC curve (zoomed in at top left)')
-# plt.legend(loc='best')
-# plt.show()
 
+#####- Confusion Matrix -#####
+threshold_fixed = 5
+pred_y = [1 if e > threshold_fixed else 0 for e in error_df.reconstruction_error.values]
+conf_matrix = confusion_matrix(error_df.true_class, pred_y)
+print(conf_matrix)
 
 plt.figure(title + '__confusion matrix')
 sns.heatmap(conf_matrix, xticklabels=LABELS, yticklabels=LABELS, annot=True, fmt="d")
@@ -228,6 +201,7 @@ plt.ylabel('True class')
 plt.xlabel('Predicted class')
 plt.draw()
 plt.savefig(pathPrefix + title + '__confusion matrix')
+
 
 #show all plots
 #plt.show()
