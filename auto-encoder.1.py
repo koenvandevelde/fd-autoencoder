@@ -1,3 +1,4 @@
+import datetime
 import pandas as pd
 import numpy as np
 import pickle
@@ -68,10 +69,16 @@ print(X_train.shape)
 print("x test shape")
 print(X_test.shape)
 
-nb_epoch = 50
-batch_size = 128
+nb_epoch = 5
+batch_size = 32
 encoding_dim = 14
-type='single'
+type='default'
+optimizer = 'adam'
+loss = 'mean_squared_error'
+regularizerInput= 10e-5
+activity_regularizer=regularizers.l1(regularizerInput)
+title = str(datetime.datetime.now().strftime('%Y-%m-%d')) + '-ae-' + type + '-loss:' + loss + '-optimizer:' + optimizer + '-encoding_dim:' + str(encoding_dim) + '-epoch:' + str(nb_epoch) + '-batch-size:'+ str(batch_size) + '-regularizers-l1:' + str(regularizerInput)
+title = title.replace('.', 'dot')
 
 if type == 'default':
     from autoencoder_models.default import run
@@ -83,15 +90,15 @@ elif type == 'single':
     from autoencoder_models.single import run
 else:
     print('unknown algorithm')
-autoencoder = run(input_dim, encoding_dim)
+autoencoder = run(input_dim, encoding_dim, activity_regularizer)
 
 
 #Once your model looks good, configure its learning process with .compile()
-autoencoder.compile(optimizer='adam', 
-                    loss='mean_squared_error', 
+autoencoder.compile(optimizer=optimizer, 
+                    loss=loss, 
                     metrics=['accuracy', 'binary_crossentropy'])
 
-checkpointer = ModelCheckpoint(filepath="model.h5",
+checkpointer = ModelCheckpoint(filepath="models/"+title+"-model.h5",
                                verbose=0,
                                save_best_only=True)
 tensorboard = TensorBoard(log_dir='./logs',
@@ -124,8 +131,7 @@ pathPrefix = 'results/'
 #Model evaluation
 print('history')
 print(history)
-import datetime
-title = 'ae-' + type + '-encoding_dim:' + str(encoding_dim) + '-' + str(datetime.datetime.now().strftime('%Y-%m-%d')) + '-params_epoch:' + str(nb_epoch)
+
 fig = plt.figure(title + '__loss')
 plt.plot(history['loss'])
 plt.plot(history['val_loss'])
@@ -155,7 +161,7 @@ scores = autoencoder.evaluate(X_train, X_train)
 #print("\n%s: %.2f%%" % (autoencoder.metrics_names[1], scores[1]*100))
 #print('/ok')
 
-#make predictions on new data
+#make predictions on new data/test data
 predictions = autoencoder.predict(X_test)
 mse = np.mean(np.power(X_test - predictions, 2), axis=1)
 error_df = pd.DataFrame({'reconstruction_error': mse,
@@ -164,11 +170,56 @@ print(error_df.describe())
 
 
 
-from sklearn.metrics import confusion_matrix, precision_recall_curve
-threshold_fixed = 5
+from sklearn.metrics import confusion_matrix, precision_recall_curve, roc_curve
+threshold_fixed = 20
 pred_y = [1 if e > threshold_fixed else 0 for e in error_df.reconstruction_error.values]
 conf_matrix = confusion_matrix(error_df.true_class, pred_y)
 print(conf_matrix)
+
+
+predictions = autoencoder.predict(X_test)[:, 1]
+fpr_keras, tpr_keras, thresholds_keras = roc_curve(error_df.true_class, predictions)
+
+print('fpr_keras')
+print(fpr_keras)
+print('tpr_keras')
+tpr_keras
+print('thresholds')
+print(thresholds_keras)
+
+from sklearn.metrics import auc
+auc_keras = auc(fpr_keras, tpr_keras)
+
+plt.figure(1)
+plt.plot([0, 1], [0, 1], 'k--')
+#plt.plot(fpr_keras, tpr_keras, label='Keras (area = {:.3f})'.format(auc_keras))
+plt.plot(fpr_keras, tpr_keras, lw=1, alpha=0.3,
+             label='ROC fold %d (AUC = %0.2f)' % (0, auc_keras))
+
+plt.xlabel('False positive rate')
+plt.ylabel('True positive rate')
+plt.title('ROC curve')
+plt.legend(loc='best')
+plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='r',
+         label='Chance', alpha=.8)
+
+
+plt.xlim([-0.05, 1.05])
+plt.ylim([-0.05, 1.05])
+plt.draw()
+plt.savefig(pathPrefix + title + '__roc')
+# Zoom in view of the upper left corner.
+# plt.figure(2)
+# plt.xlim(0, 0.2)
+# plt.ylim(0.8, 1)
+# plt.plot([0, 1], [0, 1], 'k--')
+# plt.plot(fpr_keras, tpr_keras, label='Keras (area = {:.3f})'.format(auc_keras))
+# plt.xlabel('False positive rate')
+# plt.ylabel('True positive rate')
+# plt.title('ROC curve (zoomed in at top left)')
+# plt.legend(loc='best')
+# plt.show()
+
 
 plt.figure(title + '__confusion matrix')
 sns.heatmap(conf_matrix, xticklabels=LABELS, yticklabels=LABELS, annot=True, fmt="d")
