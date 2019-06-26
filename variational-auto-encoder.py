@@ -23,12 +23,14 @@ from tensorflow.keras.datasets import mnist
 from tensorflow.keras.losses import mse, binary_crossentropy
 from tensorflow.keras.utils import plot_model
 from tensorflow.keras import backend as K
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 import os
 import datetime
+import pandas as pd
 
 
 # reparameterization trick
@@ -125,9 +127,26 @@ x_test = np.reshape(x_test, [-1, original_dim])
 x_train = x_train.astype('float32') / 255
 x_test = x_test.astype('float32') / 255
 
+X_train = pd.read_pickle('x_train.pkl')
+X_test = pd.read_pickle('x_test.pkl')
+y_test = pd.read_pickle('y_test.pkl')
+
+x_train = X_train.values
+x_test = X_test.values
+
+
+print('x_train')
+print(x_train)
+print('x_test')
+print(x_test)
 # network parameters
+original_dim = 29
+print('originql dimension')
+print(original_dim)
 input_shape = (original_dim, )
-intermediate_dim = 512
+print('original dim')
+print(input_shape)
+intermediate_dim = 14
 batch_size = 128
 latent_dim = 2
 epochs = 50
@@ -161,6 +180,8 @@ plot_model(decoder, to_file='vae_mlp_decoder.png', show_shapes=True)
 # instantiate VAE model
 outputs = decoder(encoder(inputs)[2])
 vae = Model(inputs, outputs, name='vae_mlp')
+
+checkpointer = ModelCheckpoint(filepath="vae.h5", verbose=0, save_best_only=True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -200,7 +221,8 @@ if __name__ == '__main__':
         vae.fit(x_train,
                 epochs=epochs,
                 batch_size=batch_size,
-                validation_data=(x_test, None))
+                validation_data=(x_test, None),
+                callbacks=[checkpointer])
         vae.save_weights('vae_mlp_mnist.h5')
 
     plot_results(models,
