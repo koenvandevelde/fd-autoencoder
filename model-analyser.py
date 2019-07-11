@@ -119,33 +119,9 @@ plt.xlabel('Reconstruction error')
 plt.draw()
 plt.savefig(results_path_prefix + model_name + reconstructionTitle)
 
-# colums = [1,2,3, 4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29]
 
 
-# column = 'mse'
-# title = column + ' histogram'
-# fig = plt.figure(title, figsize=(20, 10))
 
-# ar = np.array(colums)
-# width = 0.35  # the width of the bars
-# columns = ar - 2*width
-# # plt.bar(columns, error[0], width, color='blue', align='center')
-# columns = ar - width
-# # plt.bar(colums, error[1], width, color='red', align='center')
-# columns = ar + width
-# # plt.bar(colums, error[2], width, color='purple', align='center')
-# columns = ar + 2*width
-# # plt.bar(colums, error[3], width, color='green', align='center')
-# plt.xticks([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29], [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29])
-# plt.title(column)
-# plt.ylabel(column)
-# plt.draw()
-# plt.legend()
-# df = pd.DataFrame({'instance 1': error[0], 'instance 2': error[2], 'instance 3': error[3], 'instance 4': error[4]}, index=colums)
-# ax = df.plot.bar(rot=0)
-# plt.savefig('data/exploration/' + title)
-
-# sys.exit()
 mse = np.mean(np.power(reconstruction_error, 2), axis=1)
 print('mse')
 print(mse)
@@ -245,12 +221,6 @@ for x in np.arange(0, 10, 0.1):
     recall.append(Recall)
 
 
-
-
-# precision = TP / (TP + FP)
-# recall = TP / (TP + FN)
-
-
 mse_tresholdtwo = tresholds.index(2)
 mse_tresholdfour = tresholds.index(4)
 mse_tresholdsix = tresholds.index(6)
@@ -275,9 +245,9 @@ print(FP[mse_tresholdten])
 print(TP[mse_tresholdten])
 print(FN[mse_tresholdten])
 print(TN[mse_tresholdten])
-print('debugging')
-print(pred_y[0])
-print(error_df.validation_set_Y.values[0])
+
+
+#####- Amount analysis -#####
 missed = 0
 correct = 0
 for i in range(len(pred_y)):
@@ -292,53 +262,56 @@ for i in range(len(pred_y)):
             print(X_validation[i][28])
 
 
-print('missed transactions', missed)
-print('treshold')
-for i in range(len(tresholds)): 
-    print (str(i) + ' - ' + str(tresholds[i]))
-print('TN')
-for i in range(len(TP)): 
-    print (str(i) + ' - ' + str(TP[i]))
-print('FP')   
-for i in range(len(FP)): 
-    print (str(i) + ' - ' + str(FP[i]))
+#####- Classification values for certrain thresholds -#####
 
+# print('missed transactions', missed)
+# print('treshold')
+# for i in range(len(tresholds)): 
+#     print (str(i) + ' - ' + str(tresholds[i]))
+# print('TN')
+# for i in range(len(TP)): 
+#     print (str(i) + ' - ' + str(TP[i]))
+# print('FP')   
+# for i in range(len(FP)): 
+#     print (str(i) + ' - ' + str(FP[i]))
+
+#####- Thresholds FP tradeoff -#####
 falsePositiveTitle = '__False_Positives'
 plt.figure(model_name + falsePositiveTitle)
-plt.plot(tresholds, FP, lw=1, alpha=0.3,
-             label='temp')
+plt.plot(tresholds, FP, lw=1, alpha=0.3, label='temp')
 plt.xlabel('MSE Threshold')
 plt.ylabel('FP')
 plt.draw()
 plt.savefig(results_path_prefix + model_name + falsePositiveTitle)
 
+#####- Thresholds FN tradeoff -#####
 falseNegativeTitle = '__False_Negatives'
 plt.figure(model_name + falseNegativeTitle)
-plt.plot(tresholds, FN, lw=1, alpha=0.3,
-             label='temp')
+plt.plot(tresholds, FN, lw=1, alpha=0.3, label='temp')
 plt.xlabel('MSE Threshold')
 plt.ylabel('FN')
 plt.draw()
 plt.savefig(results_path_prefix + model_name + falseNegativeTitle)
 
+#####- Thresholds TP tradeoff -#####
 truePositiveTitle = '__True_Positives'
 plt.figure(model_name + truePositiveTitle)
-plt.plot(tresholds, TP, lw=1, alpha=0.3,
-             label='temp')
+plt.plot(tresholds, TP, lw=1, alpha=0.3, label='temp')
 plt.xlabel('MSE Threshold')
 plt.ylabel('TP')
 plt.draw()
 plt.savefig(results_path_prefix + model_name + truePositiveTitle)
 
+#####- Thresholds TN tradeoff -#####
 trueNegativeTitle = '__True_Negatives'
 plt.figure(model_name + trueNegativeTitle)
-plt.plot(tresholds, TN, lw=1, alpha=0.3,
-             label='temp')
+plt.plot(tresholds, TN, lw=1, alpha=0.3, label='temp')
 plt.xlabel('MSE Threshold')
 plt.ylabel('TN')
 plt.draw()
 plt.savefig(results_path_prefix + model_name + trueNegativeTitle)
 
+#####- Combine classification metrics and threshold tradeoff -#####
 tresholdsTitle = '__tresholds'
 plt.figure(model_name + tresholdsTitle)
 plt.plot(tresholds, TN, lw=1, alpha=0.3,
@@ -383,6 +356,7 @@ plt.savefig(results_path_prefix + model_name + tresholdsTitlePositives)
 
 #show all plots
 #plt.show()
+# sys.exit()
 
 print("---DONE---")
 import time
