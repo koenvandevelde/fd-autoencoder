@@ -13,7 +13,7 @@ df_non_fraudulent = df_all[df_all.Class == 0]
 
 def plotColumnValues(dfType, df, column_title):
     column = column_title
-    title = column + '_' + dfType + '_exploratory_analysis'
+    title = column + '_' + dfType + '_non-fraudulent_exploratory_analysis'
     fig = plt.figure(title)
     plt.plot(pd.to_numeric(df[column]))
     plt.title(title)
@@ -24,7 +24,7 @@ def plotColumnValues(dfType, df, column_title):
 
 def plotColumnHistogram(dfType, df, column_title):
     column = column_title
-    title = column + '_' + dfType + '_exploratory_histogram'
+    title = column + '_' + dfType + '_non-fraudulent_exploratory_histogram'
     fig = plt.figure(title)
     plt.hist(pd.to_numeric(df[column]))
     plt.title(title)
