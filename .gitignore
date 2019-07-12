@@ -2,3 +2,5 @@
 logs/*
 data/*
 results/old/*
+XDG_CACHE_HOME/
+.~lock.my dataframe.csv#
