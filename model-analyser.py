@@ -13,7 +13,7 @@ from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Input, Dense #prefix this with tensorflow
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from tensorflow.keras import regularizers
-from sklearn.metrics import confusion_matrix, precision_recall_curve, roc_curve, auc
+from sklearn.metrics import confusion_matrix, precision_recall_curve, roc_curve, auc, f1_score
 import sys
 
 LABELS = ["Normal", "Fraud"]
@@ -130,6 +130,9 @@ mse = np.mean(np.power(reconstruction_error_fraud, 2), axis=1)
 error_df = pd.DataFrame({'reconstruction_error': mse,
                         'validation_set_Y': Y_validation})
 
+#####- F1 scire as a single metric for PR curve -#####
+f1_score = f1_score(error_df.validation_set_Y, error_df.reconstruction_error)
+
 #####- PR curve -#####
 precision, recall, thresholds = precision_recall_curve(error_df.validation_set_Y, error_df.reconstruction_error)
 area = auc(recall, precision)
@@ -138,7 +141,7 @@ plt.figure(title + '__pr')
 plt.plot(recall, precision, lw=1, alpha=0.3)
 plt.xlabel('recall')
 plt.ylabel('precision')
-plt.title('PR curve. Area under curve:' + str(area))
+plt.title('PR curve. Area under curve:' + str(area) + '_f1_score:' + str(f1_score))
 plt.legend(loc='best')
 plt.xlim([-0.05, 1.05])
 plt.ylim([-0.05, 1.05])
