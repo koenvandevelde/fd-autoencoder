@@ -106,7 +106,7 @@ describeDataFrame(predictions_df_non_fraud, model_name + "_ori_dataframe_validat
 reconstructionTitle = '__Reconstruction_fraud'
 plt.figure(model_name + reconstructionTitle)
 #Y = sum up error of all features. X = Range from zero to n fraud instances
-plt.plot(range(len(reconstruction_error_fraud)), np.sum(reconstruction_error_fraud, axis = 1), lw=1, alpha=0.3)
+plt.plot(range(len(reconstruction_error_fraud)), np.sum(reconstruction_error_fraud, axis = 1), lw=2, alpha=0.3)
 plt.xlabel('Reconstruction error')
 # plt.ylabel('FP')
 plt.draw()
@@ -116,7 +116,7 @@ plt.savefig(results_path_prefix + model_name + reconstructionTitle)
 reconstructionTitle = '__Reconstruction_non_fraud'
 plt.figure(model_name + reconstructionTitle)
 #Y = sum up error of all features. X = Range from zero to n fraud instances
-plt.plot(range(len(reconstruction_error_non_fraud)), np.sum(reconstruction_error_non_fraud, axis = 1), lw=1, alpha=0.3)
+plt.plot(range(len(reconstruction_error_non_fraud)), np.sum(reconstruction_error_non_fraud, axis = 1), lw=2, alpha=0.3)
 plt.xlabel('Reconstruction error')
 # plt.ylabel('FP')
 plt.draw()
@@ -131,14 +131,40 @@ error_df = pd.DataFrame({'reconstruction_error': mse,
                         'validation_set_Y': Y_validation})
 
 #####- F1 scire as a single metric for PR curve -#####
-f1_score = f1_score(error_df.validation_set_Y, error_df.reconstruction_error)
+# f1_score = f1_score(error_df.validation_set_Y, error_df.reconstruction_error, average='weighted')
 
 #####- PR curve -#####
+fscores = []
 precision, recall, thresholds = precision_recall_curve(error_df.validation_set_Y, error_df.reconstruction_error)
+
+print(precision)
+# print('length')
+# print(len(precision))
+# print(len(recall))
+
+for i in range(len(precision)):
+    pr = precision[i]
+    rec = recall[i]
+    fscore = 2*(pr*rec)/(pr + rec) if (pr + rec) else 0
+    print(i)
+    fscores.append(fscore)
+
+
+print('f1 scores')
+print(len(fscores))
+
+pr_df = pd.DataFrame({'precision' : precision,
+                    'recall': recall,
+                    'f1score' : fscores})
+
+print('max scores')
+max_f1_scores = pr_df.nlargest(50, 'f1score')
+print(max_f1_scores)
+
 area = auc(recall, precision)
 
 plt.figure(title + '__pr')
-plt.plot(recall, precision, lw=1, alpha=0.3)
+plt.plot(recall, precision, lw=2, alpha=0.3)
 plt.xlabel('recall')
 plt.ylabel('precision')
 plt.title('PR curve. Area under curve:' + str(area) + '_f1_score:' + str(f1_score))
@@ -149,13 +175,26 @@ plt.draw()
 plt.savefig(results_path_prefix + model_name + '__pr')
 plt.close()
 
+
+plt.figure(title + '__pr_threshold')
+axes = plt.axes()
+plt.plot(thresholds, precision[1:], label="Precision",lw=2)
+plt.plot(thresholds, recall[1:], label="Recall",lw=2)
+axes.set_xlim([0,20])
+plt.title('Precision and recall for different threshold values')
+plt.xlabel('Threshold')
+plt.ylabel('Precision/Recall')
+plt.legend()
+plt.savefig(results_path_prefix + model_name + '__pr_threshold')
+plt.close()
+
 #####- ROC curve -#####
 fpr_keras, tpr_keras, thresholds_keras = roc_curve(error_df.validation_set_Y, error_df.reconstruction_error, drop_intermediate=False)
 area = auc(fpr_keras, tpr_keras)
 
 plt.figure(title + '__roc')
 plt.plot([0, 1], [0, 1], linestyle='--', label='50/50 accuracy line')
-plt.plot(fpr_keras, tpr_keras, lw=1, alpha=0.3,
+plt.plot(fpr_keras, tpr_keras, lw=2, alpha=0.3,
              label='ROC fold %d (AUC = %0.2f)' % (0, area))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
@@ -170,7 +209,7 @@ plt.close()
 #####- Plot function -#####
 def plot(x, y, xlabel, ylabel, title):
     plt.figure(title + 'title')
-    plt.plot(x, y, lw=1, alpha=0.3, color='red')
+    plt.plot(x, y, lw=2, alpha=0.3, color='red')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.title(title)
@@ -203,6 +242,17 @@ def confusionMatrix(threshold):
     plt.savefig(results_path_prefix + model_name + str(threshold)+'__confusion matrix')
     plt.close()
 
+confusionMatrix(15)
+confusionMatrix(14)
+confusionMatrix(13)
+confusionMatrix(12)
+confusionMatrix(11)
+confusionMatrix(10)
+confusionMatrix(9)
+confusionMatrix(8)
+confusionMatrix(7)
+confusionMatrix(6)
+confusionMatrix(5)
 confusionMatrix(5)
 confusionMatrix(4)
 confusionMatrix(3)
@@ -308,7 +358,7 @@ for i in range(len(pred_y)):
 #####- Thresholds FP tradeoff -#####
 falsePositiveTitle = '__False_Positives'
 plt.figure(model_name + falsePositiveTitle)
-plt.plot(tresholds, FP, lw=1, alpha=0.3, label='temp')
+plt.plot(tresholds, FP, lw=2, label='temp')
 plt.xlabel('MSE Threshold')
 plt.ylabel('FP')
 plt.draw()
@@ -317,7 +367,7 @@ plt.savefig(results_path_prefix + model_name + falsePositiveTitle)
 #####- Thresholds FN tradeoff -#####
 falseNegativeTitle = '__False_Negatives'
 plt.figure(model_name + falseNegativeTitle)
-plt.plot(tresholds, FN, lw=1, alpha=0.3, label='temp')
+plt.plot(tresholds, FN, lw=2, label='temp')
 plt.xlabel('MSE Threshold')
 plt.ylabel('FN')
 plt.draw()
@@ -326,7 +376,7 @@ plt.savefig(results_path_prefix + model_name + falseNegativeTitle)
 #####- Thresholds TP tradeoff -#####
 truePositiveTitle = '__True_Positives'
 plt.figure(model_name + truePositiveTitle)
-plt.plot(tresholds, TP, lw=1, alpha=0.3, label='temp')
+plt.plot(tresholds, TP, lw=2, label='temp')
 plt.xlabel('MSE Threshold')
 plt.ylabel('TP')
 plt.draw()
@@ -335,7 +385,7 @@ plt.savefig(results_path_prefix + model_name + truePositiveTitle)
 #####- Thresholds TN tradeoff -#####
 trueNegativeTitle = '__True_Negatives'
 plt.figure(model_name + trueNegativeTitle)
-plt.plot(tresholds, TN, lw=1, alpha=0.3, label='temp')
+plt.plot(tresholds, TN, lw=2, label='temp')
 plt.xlabel('MSE Threshold')
 plt.ylabel('TN')
 plt.draw()
@@ -344,13 +394,13 @@ plt.savefig(results_path_prefix + model_name + trueNegativeTitle)
 #####- Combine classification metrics and threshold tradeoff -#####
 tresholdsTitle = '__tresholds'
 plt.figure(model_name + tresholdsTitle)
-plt.plot(tresholds, TN, lw=1, alpha=0.3,
+plt.plot(tresholds, TN, lw=2,
              label='TN')
-plt.plot(tresholds, TP, lw=1, alpha=0.3,
+plt.plot(tresholds, TP, lw=2,
              label='TP')
-plt.plot(tresholds, FP, lw=1, alpha=0.3,
+plt.plot(tresholds, FP, lw=2,
              label='FP')
-plt.plot(tresholds, FN, lw=1, alpha=0.3,
+plt.plot(tresholds, FN, lw=2,
              label='FN')
 plt.legend(['TN', 'TP', 'FP', 'FN'], loc='upper left')                       
 plt.xlabel('MSE Threshold')
@@ -363,8 +413,8 @@ plt.savefig(results_path_prefix + model_name + tresholdsTitle)
 # recall = TP / (TP + FN)
 PRtitle = '__PR'
 plt.figure(model_name + PRtitle)
-plt.plot(precision, lw=1, alpha=0.3)
-plt.plot(recall, lw=1, alpha=0.3)
+plt.plot(precision, lw=2)
+plt.plot(recall, lw=2)
 plt.xlabel('precision')
 plt.ylabel('recall')
 plt.draw()
@@ -374,10 +424,8 @@ plt.close()
 
 tresholdsTitlePositives = '__positives'
 plt.figure(model_name + tresholdsTitlePositives)
-plt.plot(tresholds, TP, lw=1, alpha=0.3,
-             label='TP')
-plt.plot(tresholds, FP, lw=1, alpha=0.3,
-             label='FP')
+plt.plot(tresholds, TP, lw=2,label='TP')
+plt.plot(tresholds, FP, lw=2,label='FP')
 plt.legend([ 'TP', 'FP'], loc='upper left')                       
 plt.xlabel('MSE Threshold')
 plt.ylabel('TN')
