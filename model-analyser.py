@@ -21,21 +21,22 @@ validation_path_prefix = 'data/validation/'
 results_path_prefix = 'results/'
 models_path_prefix = 'models/'
 models_path_postfix = '.h5'
-model_name = '2019-07-07--15:42:24-ae-single-loss:mean_squared_error-optimizer:adam-encoding_dim:8-epoch:35-batch-size:32-regularizers-l1:0dot0001-model'
+model_name = '2019-07-11--22:08:31-ae-default-loss:mean_squared_error-optimizer:adam-encoding_dim:8-epoch:35-batch-size:32-regularizers-l1:0dot0001-model'
 file_path = models_path_prefix + model_name + models_path_postfix
 title = model_name
 
-#Load trained model
+#####- Load trained model -#####
 autoencoder = load_model(file_path, compile=False)
 #
 
 #Load datasets
 datasets_path_prefix = 'data/preprocessed/'
 X_train = pd.read_pickle(datasets_path_prefix+'X_train.pkl')
+Y_train = pd.read_pickle(datasets_path_prefix+'Y_train.pkl')
 X_test = pd.read_pickle(datasets_path_prefix+'X_test.pkl')
 Y_test = pd.read_pickle(datasets_path_prefix+'Y_test.pkl')
 X_validation_df = pd.read_pickle(datasets_path_prefix+'X_validation.pkl')
-Y_validation = pd.read_pickle(datasets_path_prefix+'Y_validation.pkl')
+Y_validation_df = pd.read_pickle(datasets_path_prefix+'Y_validation.pkl')
 
 
 
@@ -53,7 +54,9 @@ X_validation_non_fraud = X_validation_non_fraud_df.values
 
 
 X_validation = X_validation_df.values
+Y_validation = Y_validation_df.values
 X_train = X_train.values
+Y_train = Y_train.values
 X_test = X_test.values
 
 
@@ -121,45 +124,57 @@ plt.savefig(results_path_prefix + model_name + reconstructionTitle)
 
 
 
-
-mse = np.mean(np.power(reconstruction_error, 2), axis=1)
-print('mse')
-print(mse)
+predictions = autoencoder.predict(X_validation)
+reconstruction_error_fraud = X_validation - predictions
+mse = np.mean(np.power(reconstruction_error_fraud, 2), axis=1)
 error_df = pd.DataFrame({'reconstruction_error': mse,
                         'validation_set_Y': Y_validation})
 
-print(error_df.reconstruction_error.describe())
+#####- PR curve -#####
+precision, recall, thresholds = precision_recall_curve(error_df.validation_set_Y, error_df.reconstruction_error)
+area = auc(recall, precision)
 
-#####- ROC -#####
-print('real values')
-print(X_test[0])
-print(X_test[1])
-print('before predictions')
-print(predictions[0])
-print(predictions[1])
-#take all the rows but keep the second column
-#predictions = autoencoder.predict(X_test)[:, 1]
-print('after predictions')
-print(predictions[0])
-print('y test 0')
-#print(y_test[0])
-print('predictions 0')
-print(predictions[0])
-fpr_keras, tpr_keras, thresholds_keras = roc_curve(error_df.validation_set_Y, error_df.reconstruction_error)
-auc_keras = auc(fpr_keras, tpr_keras)
+plt.figure(title + '__pr')
+plt.plot(recall, precision, lw=1, alpha=0.3)
+plt.xlabel('recall')
+plt.ylabel('precision')
+plt.title('PR curve. Area under curve:' + str(area))
+plt.legend(loc='best')
+plt.xlim([-0.05, 1.05])
+plt.ylim([-0.05, 1.05])
+plt.draw()
+plt.savefig(results_path_prefix + model_name + '__pr')
+plt.close()
+
+#####- ROC curve -#####
+fpr_keras, tpr_keras, thresholds_keras = roc_curve(error_df.validation_set_Y, error_df.reconstruction_error, drop_intermediate=False)
+area = auc(fpr_keras, tpr_keras)
 
 plt.figure(title + '__roc')
 plt.plot([0, 1], [0, 1], linestyle='--', label='50/50 accuracy line')
 plt.plot(fpr_keras, tpr_keras, lw=1, alpha=0.3,
-             label='ROC fold %d (AUC = %0.2f)' % (0, auc_keras))
+             label='ROC fold %d (AUC = %0.2f)' % (0, area))
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
-plt.title('ROC curve')
+plt.title('ROC curve . Area under curve:' + str(area))
 plt.legend(loc='best')
 plt.xlim([-0.05, 1.05])
 plt.ylim([-0.05, 1.05])
 plt.draw()
 plt.savefig(results_path_prefix + model_name + '__roc')
+plt.close()
+
+#####- Plot function -#####
+def plot(x, y, xlabel, ylabel, title):
+    plt.figure(title + 'title')
+    plt.plot(x, y, lw=1, alpha=0.3, color='red')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.draw()
+    title = title.replace('.', 'dot')
+    print(results_path_prefix + model_name + title)
+    plt.savefig(results_path_prefix + model_name + title)
 
 #####- Confusion Matrix -#####
 def confusionMatrix(threshold):
@@ -200,11 +215,23 @@ precision = []
 recall = []
 tresholds = []
 
-for x in np.arange(0, 10, 0.1):
+for x in np.arange(0, 10, 1):
     threshold_fixed = x
     tresholds.append(threshold_fixed)
     pred_y = [1 if e > threshold_fixed else 0 for e in error_df.reconstruction_error.values]
     conf_matrix = confusion_matrix(error_df.validation_set_Y, pred_y)
+    fpr_keras, tpr_keras, thresholds_keras = roc_curve(error_df.validation_set_Y, pred_y, pos_label=1, drop_intermediate=False)
+    plot(fpr_keras, tpr_keras, 'fpr', 'tpr', '_ROC'  + str(x))
+    # print('fpr_keras')
+    # print(fpr_keras)
+    # print('tpr_keras')
+    # print(tpr_keras)
+    # print('debugging pred_y')
+    # print(pred_y)
+    precision, recall, thresholds = precision_recall_curve(error_df.validation_set_Y, pred_y)
+    print('debugging precision')
+    print(precision)
+    plot(recall, precision, 'recall', 'precision', '_PR'  + str(round(x)))
     tp = conf_matrix[1][1]
     fp = conf_matrix[1][0]
     fn = conf_matrix[0][1]
@@ -212,19 +239,19 @@ for x in np.arange(0, 10, 0.1):
     TP.append(tp)
     TN.append(conf_matrix[0][0])
     FN.append(fn)
-    Precision = tp / (tp + fp)
-    print('precision tp:' + str(tp) + 'fp: ' + str(fp) + 'FN: ' + str(fn) +  ' threshold fixed: '  + str(threshold_fixed))
-    print(Precision)
-    precision.append(Precision)
-    Recall = tp / (tp + fn)
-    print(Recall)
-    recall.append(Recall)
+    # Precision = tp / (tp + fp)
+    # print('precision tp:' + str(tp) + 'fp: ' + str(fp) + 'FN: ' + str(fn) +  ' threshold fixed: '  + str(threshold_fixed))
+    # print(Precision)
+    # precision.append(Precision)
+    # Recall = tp / (tp + fn)
+    # print(Recall)
+    # recall.append(Recall)
 
 
 mse_tresholdtwo = tresholds.index(2)
 mse_tresholdfour = tresholds.index(4)
 mse_tresholdsix = tresholds.index(6)
-mse_tresholdten = tresholds.index(9.9)
+mse_tresholdten = tresholds.index(9)
 print('tresholds')
 print(FP[mse_tresholdtwo])
 print(TP[mse_tresholdtwo])
