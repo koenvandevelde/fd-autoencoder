@@ -1,7 +1,6 @@
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
 
 
 def shapeData(data, transform_amount, transform_all):
@@ -37,17 +36,6 @@ def shapeData(data, transform_amount, transform_all):
 
 
     prefix = 'data/preprocessed/'
-
-
-    # RANDOM_SEED = 42
-    # X_train, X_test = train_test_split(data, test_size=0.2, random_state=RANDOM_SEED)
-    # Y_test = X_test['Class']
-    # print('x-train and x-test')
-    # print(X_train.describe())
-    # Y_test.to_pickle(prefix+ 'Y_test.pkl')
-    # X_test.to_pickle(prefix + 'X_test.pkl')
-    # print(X_test.describe())
-  
 
     
     #list of all class labels only
