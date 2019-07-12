@@ -1,16 +1,12 @@
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
-
-
-# std_scale = preprocessing.StandardScaler().fit(X_train)
-# X_train_std = std_scale.transform(X_train)
-# X_test_std = std_scale.transform(X_test)
-
+from sklearn.model_selection import train_test_split
 
 
 def shapeData(data, transform_amount, transform_all):
     if transform_amount:
+        print('transforming amount')
         # scaler = StandardScaler()
         # print('scale data')
         # std_scale = scaler.fit(data['Amount'].values)
@@ -27,6 +23,8 @@ def shapeData(data, transform_amount, transform_all):
     validation_length = int(len(data)*0.05)
 
     X_train = data.iloc[:training_length]
+
+    Y_train = X_train['Class']
     #only use non fraudulent transactions for training set
     X_train = X_train[X_train.Class == 0]
     #drop class label for training set
@@ -39,6 +37,16 @@ def shapeData(data, transform_amount, transform_all):
 
 
     prefix = 'data/preprocessed/'
+
+
+    # RANDOM_SEED = 42
+    # X_train, X_test = train_test_split(data, test_size=0.2, random_state=RANDOM_SEED)
+    # Y_test = X_test['Class']
+    # print('x-train and x-test')
+    # print(X_train.describe())
+    # Y_test.to_pickle(prefix+ 'Y_test.pkl')
+    # X_test.to_pickle(prefix + 'X_test.pkl')
+    # print(X_test.describe())
   
 
     
@@ -52,6 +60,7 @@ def shapeData(data, transform_amount, transform_all):
     Y_test.to_pickle(prefix+ 'Y_test.pkl')
     X_test = X_test.drop(['Class'], axis=1)
     X_train.to_pickle(prefix + 'X_train.pkl')
+    Y_train.to_pickle(prefix + 'Y_train.pkl')
     X_test.to_pickle(prefix + 'X_test.pkl')
 
 
@@ -71,6 +80,6 @@ data = pd.read_csv("data/creditcard.csv")
 shapeData(data, 0, 0)
 plotColumnValues('before_scaling',data, 'Amount')
 
-data = pd.read_csv("data/creditcard.csv")
-shapeData(data, 1, 0)
-plotColumnValues('after_scaling',data, 'Amount')
+# data = pd.read_csv("data/creditcard.csv")
+# shapeData(data, 1, 0)
+# plotColumnValues('after_scaling',data, 'Amount')
