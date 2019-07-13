@@ -16,7 +16,7 @@ from tensorflow.keras import regularizers
 from sklearn.metrics import confusion_matrix, precision_recall_curve, roc_curve, auc, f1_score
 import sys
 
-LABELS = ["Normal", "Fraud"]
+LABELS = ["Fraud", "Normal"]
 validation_path_prefix = 'data/validation/'
 results_path_prefix = 'results/'
 models_path_prefix = 'models/'
@@ -68,7 +68,7 @@ def describeDataFrame(df, header):
     # print(df.describe())
     # print('tail')
     # print(df.tail(5))
-    df.describe().to_csv(validation_path_prefix + header + ".csv")
+    df.to_csv(validation_path_prefix + header + ".csv")
 
 
 
@@ -79,8 +79,8 @@ reconstruction_error = X_validation - predictions
 # print(X_validation[0] - predictions[0])
 columns = list(X_validation_df.columns) 
 predictions_df = pd.DataFrame(reconstruction_error, columns=columns)
-describeDataFrame(X_validation_df, model_name + "_dataframe_validation_original")
-describeDataFrame(predictions_df, model_name + "_dataframe_validation_predictions")
+describeDataFrame(X_validation_df.describe(), model_name + "_dataframe_validation_original")
+describeDataFrame(predictions_df.describe(), model_name + "_dataframe_validation_predictions")
 
 #Predictions on fraud transactions of validation set (high mse expected)
 predictions = autoencoder.predict(X_validation_fraud)
@@ -92,15 +92,15 @@ sum = np.sum(reconstruction_error_fraud, axis = 1)
 # print('should be 7 ')
 # print('end test')
 predictions_df_fraud = pd.DataFrame(reconstruction_error_fraud, columns=columns)
-describeDataFrame(predictions_df_fraud, model_name + "_predictions_dataframe_validation_type_fraud")
-describeDataFrame(X_validation_fraud_df, model_name + "_ori_dataframe_validation_type_fraud")
+describeDataFrame(predictions_df_fraud.describe(), model_name + "_predictions_dataframe_validation_type_fraud")
+describeDataFrame(X_validation_fraud_df.describe(), model_name + "_ori_dataframe_validation_type_fraud")
 
 #Predictions on non fraud transactions of validation set (low mse expected)
 predictions = autoencoder.predict(X_validation_non_fraud)
 reconstruction_error_non_fraud = X_validation_non_fraud - predictions
 predictions_df_non_fraud = pd.DataFrame(reconstruction_error_non_fraud, columns=columns)
-describeDataFrame(predictions_df, model_name + "_predictions_dataframe_validation_type_non-fraud")
-describeDataFrame(predictions_df_non_fraud, model_name + "_ori_dataframe_validation_type_non-fraud")
+describeDataFrame(predictions_df.describe(), model_name + "_predictions_dataframe_validation_type_non-fraud")
+describeDataFrame(predictions_df_non_fraud.describe(), model_name + "_ori_dataframe_validation_type_non-fraud")
 
 #Predictions on fraud transactions of validation set (high mse expected)
 reconstructionTitle = '__Reconstruction_fraud'
@@ -142,7 +142,7 @@ print(precision)
 # print(len(precision))
 # print(len(recall))
 
-for i in range(len(precision)):
+for i in range(len(thresholds)):
     pr = precision[i]
     rec = recall[i]
     fscore = 2*(pr*rec)/(pr + rec) if (pr + rec) else 0
@@ -150,15 +150,14 @@ for i in range(len(precision)):
     fscores.append(fscore)
 
 
-print('f1 scores')
-print(len(fscores))
-
-pr_df = pd.DataFrame({'precision' : precision,
-                    'recall': recall,
-                    'f1score' : fscores})
+pr_df = pd.DataFrame({'precision' : precision[1:],
+                    'recall': recall[1:],
+                    'f1score' : fscores,
+                    'threshold' : thresholds})
 
 print('max scores')
 max_f1_scores = pr_df.nlargest(50, 'f1score')
+describeDataFrame(max_f1_scores.head(50), '_max_f1_scores')
 print(max_f1_scores)
 
 area = auc(recall, precision)
@@ -222,22 +221,25 @@ def plot(x, y, xlabel, ylabel, title):
 def confusionMatrix(threshold):
     pred_y = [1 if e > threshold else 0 for e in error_df.reconstruction_error.values]
     conf_matrix = confusion_matrix(error_df.validation_set_Y, pred_y)
-    print('conf matrix')
-    print(conf_matrix)
-    print('TN')
-    print(conf_matrix[0][0])
-    print('FP')
-    print(conf_matrix[1][0])
-    print('TP')
-    print(conf_matrix[1][1])
-    print('FN')
-    print(conf_matrix[0][1])
+    # print('conf matrix')
+    # print(conf_matrix)
+    # print('TN')
+    # print(conf_matrix[0][0])
+    # print('FP')
+    # print(conf_matrix[1][0])
+    # print('TP')
+    # print(conf_matrix[1][1])
+    # print('FN')
+    # print(conf_matrix[0][1])
 
-    plt.figure(title + '__confusion matrix')
-    sns.heatmap(conf_matrix, xticklabels=LABELS, yticklabels=LABELS, annot=True, fmt="d")
-    plt.title("Confusion matrix")
-    plt.ylabel('True class')
-    plt.xlabel('Predicted class')
+    anomaly_conf_matrix = [conf_matrix[1][1], conf_matrix[0][1]],[conf_matrix[1][0], conf_matrix[0][0]]
+
+    plt.figure(title + '_threshold_' + str(threshold) + '_confusion matrix')
+    sns.heatmap(anomaly_conf_matrix, xticklabels=LABELS, yticklabels=LABELS, annot=True, fmt="d")
+    plt.title("Confusion matrix " + str(threshold))
+    plt.ylabel('Predicted class')
+    plt.xlabel('True class')
+
     # plt.draw()
     plt.savefig(results_path_prefix + model_name + str(threshold)+'__confusion matrix')
     plt.close()
