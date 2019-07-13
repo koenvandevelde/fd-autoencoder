@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 def shapeData(data, transform_amount, transform_all, path='_'):
     if transform_amount:
         print('transforming amount')
+        data['Amount'] = StandardScaler().fit_transform(data['Amount'].values.reshape(-1, 1))
+    if transform_all:
+        print('transforming all')
         # scaler = StandardScaler()
         # print('scale data')
         # std_scale = scaler.fit(data['Amount'].values)
@@ -97,5 +100,9 @@ shapeData(data, 0, 0)
 plotColumnValues('before_scaling',data, 'Amount')
 
 data = pd.read_csv("data/creditcard.csv")
-shapeData(data, 1, 0, 'scaled')
+shapeData(data, 1, 0, 'scaled_amount')
+plotColumnValues('after_scaling',data, 'Amount')
+
+data = pd.read_csv("data/creditcard.csv")
+shapeData(data, 0, 1, 'scaled_all')
 plotColumnValues('after_scaling',data, 'Amount')
