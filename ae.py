@@ -15,67 +15,36 @@ from tensorflow.keras import regularizers
 from sklearn.metrics import confusion_matrix, precision_recall_curve, roc_curve, auc
 import sys
    
-LABELS = ["Normal", "Fraud"]
-
-#Initialize variables in data and testset
-#moved to data-preprocessing.py
-# def initData():
-#     df = pd.read_csv("data/creditcard.csv")
-#     print(df.describe())
-#     data = df.drop(['Time'], axis=1)
-#     training_length = int(len(data)*0.9)
-#     validation_length = int(len(data)*0.05)
-
-#     X_train = data.iloc[:training_length]
-#     #only use non fraudulent transactions for training set
-#     X_train = X_train[X_train.Class == 0]
-#     #drop class label for training set
-#     X_train = X_train.drop(['Class'], axis=1) 
-#     print("Number of frauds removed from training set: ")
-#     print(training_length - len(X_train)) 
-
-#     X_validation = data.iloc[training_length:training_length+validation_length]
-#     X_test = data.iloc[training_length+validation_length:]
-
-
-#     #list of all class labels only
-#     Y_validation = X_validation['Class']
-#     Y_validation.to_pickle('Y_validation.pkl')
-#     X_validation = X_validation.drop(['Class'], axis=1)
-#     X_validation.to_pickle('X_validation.pkl')
-#     Y_test = X_test['Class']
-#     Y_test.to_pickle('Y_test.pkl')
-#     X_test = X_test.drop(['Class'], axis=1)
-#     X_train.to_pickle('X_train.pkl')
-#     X_test.to_pickle('X_test.pkl')
-
-#initData()
-
+   
 prefix = 'data/preprocessed/'
+scaled_all = 0
+if scaled_all:
+    prefix = 'data/preprocessed/scaled_all'
+scaled_amount = 1
+if scaled_amount:
+    prefix = 'data/preprocessed/scaled_amount'
+
 X_train = pd.read_pickle(prefix+'X_train.pkl')
 
-# X_test = pd.read_pickle(prefix+'X_test.pkl')
-# Y_test = pd.read_pickle(prefix+'Y_test.pkl')
-X_validation = pd.read_pickle(prefix+'X_validation.pkl')
-Y_validation = pd.read_pickle(prefix+'Y_validation.pkl')
-print(X_train.describe())
+X_validation_df = pd.read_pickle(prefix+'X_validation.pkl')
+Y_validation_df = pd.read_pickle(prefix+'Y_validation.pkl')
 X_train = X_train.values
-# X_test = X_test.values
-X_validation = X_validation.values
+X_validation = X_validation_df.values
 
 #####- Building model -#####
 input_dim = X_train.shape[1]
 
 
-nb_epoch = 35
+nb_epoch = 10
 batch_size = 32
-encoding_dim = 8
-type='default'
+encoding_dim = 14
+type='single'
 optimizer = 'adam'
 loss = 'mean_squared_error'
-regularizerInput= 10e-5
+regularizerInput= 10e-3
+print('training with regularization:'  + str(regularizerInput))
 activity_regularizer=regularizers.l1(regularizerInput)
-title = str(datetime.datetime.now().strftime('%Y-%m-%d--%H:%M:%S')) + '-ae-' + type + '-loss:' + loss + '-optimizer:' + optimizer + '-encoding_dim:' + str(encoding_dim) + '-epoch:' + str(nb_epoch) + '-batch-size:'+ str(batch_size) + '-regularizers-l1:' + str(regularizerInput)
+title = str(datetime.datetime.now().strftime('%Y-%m-%d--%H:%M:%S')) + '-ae-' + type + '-loss:' + loss + '-optimizer:' + optimizer + '-encoding_dim:' + str(encoding_dim) + '-epoch:' + str(nb_epoch) + '-batch-size:'+ str(batch_size) + '-regularizers-l1:' + str(regularizerInput) + '_scaled_all:' + str(scaled_all) + '_scaled_amount:' + str(scaled_amount)
 title = title.replace('.', 'dot')
 
 if type == 'default':
@@ -136,8 +105,8 @@ plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
-plt.draw()
-plt.show()
+# plt.draw()
+# plt.show()
 # plt.savefig(pathPrefix + title + '__loss')
 
 

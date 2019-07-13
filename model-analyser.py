@@ -21,7 +21,7 @@ validation_path_prefix = 'data/validation/'
 results_path_prefix = 'results/'
 models_path_prefix = 'models/'
 models_path_postfix = '.h5'
-model_name = '2019-07-13--20:07:43-ae-single-loss:mean_squared_error-optimizer:adam-encoding_dim:14-epoch:10-batch-size:32-regularizers-l1:0dot01-model'
+model_name = '2019-07-13--22:08:24-ae-single-loss:mean_squared_error-optimizer:adam-encoding_dim:14-epoch:10-batch-size:32-regularizers-l1:0dot01_scaled_all:0_scaled_amount:1-model'
 file_path = models_path_prefix + model_name + models_path_postfix
 title = model_name
 
@@ -31,10 +31,13 @@ autoencoder = load_model(file_path, compile=False)
 
 #Load datasets
 datasets_path_prefix = 'data/preprocessed/'
-scaled = 0
-if scaled:
-    datasets_path_prefix = 'data/preprocessed/scaled'
-    results_path_prefix = 'results/scaled_'
+scaled_amount = 1
+if scaled_amount:
+    datasets_path_prefix = 'data/preprocessed/scaled_amount'
+
+scaled_all = 0
+if scaled_all:
+    datasets_path_prefix = 'data/preprocessed/scaled_all'
 
 X_train_df = pd.read_pickle(datasets_path_prefix+'X_train.pkl')
 Y_train = pd.read_pickle(datasets_path_prefix+'Y_train.pkl')
