@@ -142,17 +142,21 @@ print(precision)
 # print(len(precision))
 # print(len(recall))
 
-for i in range(len(thresholds)):
+for i in range(len(precision)):
     pr = precision[i]
     rec = recall[i]
-    fscore = 2*(pr*rec)/(pr + rec) if (pr + rec) else 0
+    fscore = 2*(pr*rec)/(pr + rec)
+    print('woengeogieri')
+    print(2*(pr*rec))
+    print(pr+rec)
+    print(fscore)
     print(i)
     fscores.append(fscore)
 
 
 pr_df = pd.DataFrame({'precision' : precision[1:],
                     'recall': recall[1:],
-                    'f1score' : fscores,
+                    'f1score' : fscores[1:],
                     'threshold' : thresholds})
 
 print('max scores')
