@@ -21,7 +21,7 @@ validation_path_prefix = 'data/validation/'
 results_path_prefix = 'results/'
 models_path_prefix = 'models/'
 models_path_postfix = '.h5'
-model_name = '2019-07-11--22:08:31-ae-default-loss:mean_squared_error-optimizer:adam-encoding_dim:8-epoch:35-batch-size:32-regularizers-l1:0dot0001-model'
+model_name = '2019-07-13--20:07:43-ae-single-loss:mean_squared_error-optimizer:adam-encoding_dim:14-epoch:10-batch-size:32-regularizers-l1:0dot01-model'
 file_path = models_path_prefix + model_name + models_path_postfix
 title = model_name
 
@@ -31,9 +31,14 @@ autoencoder = load_model(file_path, compile=False)
 
 #Load datasets
 datasets_path_prefix = 'data/preprocessed/'
-X_train = pd.read_pickle(datasets_path_prefix+'X_train.pkl')
+scaled = 0
+if scaled:
+    datasets_path_prefix = 'data/preprocessed/scaled'
+    results_path_prefix = 'results/scaled_'
+
+X_train_df = pd.read_pickle(datasets_path_prefix+'X_train.pkl')
 Y_train = pd.read_pickle(datasets_path_prefix+'Y_train.pkl')
-X_test = pd.read_pickle(datasets_path_prefix+'X_test.pkl')
+X_test_df = pd.read_pickle(datasets_path_prefix+'X_test.pkl')
 Y_test = pd.read_pickle(datasets_path_prefix+'Y_test.pkl')
 X_validation_df = pd.read_pickle(datasets_path_prefix+'X_validation.pkl')
 Y_validation_df = pd.read_pickle(datasets_path_prefix+'Y_validation.pkl')
@@ -55,9 +60,9 @@ X_validation_non_fraud = X_validation_non_fraud_df.values
 
 X_validation = X_validation_df.values
 Y_validation = Y_validation_df.values
-X_train = X_train.values
+X_train = X_train_df.values
 Y_train = Y_train.values
-X_test = X_test.values
+X_test = X_test_df.values
 
 
 def describeDataFrame(df, header):
@@ -70,7 +75,7 @@ def describeDataFrame(df, header):
     # print(df.tail(5))
     df.to_csv(validation_path_prefix + header + ".csv")
 
-
+describeDataFrame(X_train_df.describe(), model_name + '_dataframe_training')
 
 #Predictions on combined transactions of validation set
 predictions = autoencoder.predict(X_validation)
@@ -146,11 +151,6 @@ for i in range(len(precision)):
     pr = precision[i]
     rec = recall[i]
     fscore = 2*(pr*rec)/(pr + rec)
-    print('woengeogieri')
-    print(2*(pr*rec))
-    print(pr+rec)
-    print(fscore)
-    print(i)
     fscores.append(fscore)
 
 
@@ -161,7 +161,7 @@ pr_df = pd.DataFrame({'precision' : precision[1:],
 
 print('max scores')
 max_f1_scores = pr_df.nlargest(50, 'f1score')
-describeDataFrame(max_f1_scores.head(50), '_max_f1_scores')
+describeDataFrame(max_f1_scores.head(50), model_name +  '_max_f1_scores')
 print(max_f1_scores)
 
 area = auc(recall, precision)
@@ -221,8 +221,8 @@ def plot(x, y, xlabel, ylabel, title):
     print(results_path_prefix + model_name + title)
     plt.savefig(results_path_prefix + model_name + title)
 
-#####- Confusion Matrix -#####
-def confusionMatrix(threshold):
+#####- Confusion Matrix on Validation set -#####
+def confusionMatrixValidation(threshold):
     pred_y = [1 if e > threshold else 0 for e in error_df.reconstruction_error.values]
     conf_matrix = confusion_matrix(error_df.validation_set_Y, pred_y)
     # print('conf matrix')
@@ -245,25 +245,25 @@ def confusionMatrix(threshold):
     plt.xlabel('True class')
 
     # plt.draw()
-    plt.savefig(results_path_prefix + model_name + str(threshold)+'__confusion matrix')
+    plt.savefig(results_path_prefix + model_name +'__confusion matrix_' + str(threshold))
     plt.close()
 
-confusionMatrix(15)
-confusionMatrix(14)
-confusionMatrix(13)
-confusionMatrix(12)
-confusionMatrix(11)
-confusionMatrix(10)
-confusionMatrix(9)
-confusionMatrix(8)
-confusionMatrix(7)
-confusionMatrix(6)
-confusionMatrix(5)
-confusionMatrix(5)
-confusionMatrix(4)
-confusionMatrix(3)
-confusionMatrix(2)
-confusionMatrix(1)
+confusionMatrixValidation(15)
+confusionMatrixValidation(14)
+confusionMatrixValidation(13)
+confusionMatrixValidation(12)
+confusionMatrixValidation(11)
+confusionMatrixValidation(10)
+confusionMatrixValidation(9)
+confusionMatrixValidation(8)
+confusionMatrixValidation(7)
+confusionMatrixValidation(6)
+confusionMatrixValidation(5)
+confusionMatrixValidation(5)
+confusionMatrixValidation(4)
+confusionMatrixValidation(3)
+confusionMatrixValidation(2)
+confusionMatrixValidation(1)
 
 
 TP = []
@@ -437,6 +437,53 @@ plt.xlabel('MSE Threshold')
 plt.ylabel('TN')
 plt.draw()
 plt.savefig(results_path_prefix + model_name + tresholdsTitlePositives)
+
+
+#####- End Validation Data. Start Test Data -#####
+describeDataFrame(X_test_df.describe(), model_name + '_dataframe_test')
+predictions = autoencoder.predict(X_test)
+reconstruction_error_fraud = X_test - predictions
+mse = np.mean(np.power(reconstruction_error_fraud, 2), axis=1)
+error_df = pd.DataFrame({'reconstruction_error': mse,
+                        'test_set_Y': Y_test})
+
+#####- Confusion Matrix -#####
+def confusionMatrixTest(threshold):
+    pred_y = [1 if e > threshold else 0 for e in error_df.reconstruction_error.values]
+    conf_matrix = confusion_matrix(error_df.test_set_Y, pred_y)
+    # print('conf matrix')
+    # print(conf_matrix)
+    # print('TN')
+    # print(conf_matrix[0][0])
+    # print('FP')
+    # print(conf_matrix[1][0])
+    # print('TP')
+    # print(conf_matrix[1][1])
+    # print('FN')
+    # print(conf_matrix[0][1])
+
+    anomaly_conf_matrix = [conf_matrix[1][1], conf_matrix[0][1]],[conf_matrix[1][0], conf_matrix[0][0]]
+
+    plt.figure(title + '_threshold_' + str(threshold) + '_confusion matrix')
+    sns.heatmap(anomaly_conf_matrix, xticklabels=LABELS, yticklabels=LABELS, annot=True, fmt="d")
+    plt.title("Confusion matrix " + str(threshold))
+    plt.ylabel('Predicted class')
+    plt.xlabel('True class')
+
+    # plt.draw()
+    plt.savefig(results_path_prefix + model_name + '_confusion matrix_test_' + str(threshold))
+    plt.close()
+
+confusionMatrixTest(4)
+confusionMatrixTest(5)
+confusionMatrixTest(6)
+confusionMatrixTest(7)
+confusionMatrixTest(8)
+confusionMatrixTest(9)
+confusionMatrixTest(10)
+confusionMatrixTest(11)
+confusionMatrixTest(12)
+confusionMatrixTest(13)
 
 #show all plots
 #plt.show()
